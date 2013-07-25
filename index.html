@@ -1,0 +1,180 @@
+<html>
+<head>
+	<title>Asteroids</title>
+	<style type="text/css">
+		body
+		{
+			background-color: #100A42;
+		}
+		
+		#gamearea
+		{
+			width: 400px;
+			height: 400px;
+			
+			position: absolute;
+			top: 0px;
+			left: 0px;
+			z-index: 2;
+		}	
+
+		#gameboyframe
+		{
+			height: 553px;
+			width: 621px;
+			position: absolute;
+			top: 0px;
+			left: 0px;
+			z-index: 2;
+			background-image: url("gameboy-power.png");
+		}
+	</style>
+	
+	<script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.8.3.js"></script>
+	<script type="text/javascript" src="TilesetManager.js"></script>
+	<script type="text/javascript" src="Asteroids.js"></script>
+	<script type="text/javascript">
+		var canvas;
+		var context;
+
+		var last_time = 0;
+		var now_time = 0;	
+		
+		function setup()
+		{
+			setup_gamearea();
+		}
+		
+		function setup_gamearea()
+		{			
+			canvas.width = 400;
+			canvas.height = 400;
+			
+			var frame = $("#gameboyframe");
+			frame.css("left", ($(document).width()/2)-(frame.width()/2));
+			frame.css("top", ($(document).height()/2)-(frame.height()/2));
+			
+			
+			var gamearea = $("#gamearea");
+			gamearea.css("left", ($(document).width()/2)-(canvas.width/2)+1);
+			gamearea.css("top", ($(document).height()/2)-(canvas.height/2)-22);
+		}
+		
+		function update()
+		{
+			now_time = (new Date()).getTime();
+
+			if (last_time == 0)
+				update_stars(0);
+			else
+				update_stars(now_time - last_time);
+
+			last_time = (new Date()).getTime();
+		}		
+
+		function update_stars() {};
+
+		function render()
+		{
+			context.clearRect(0,0,canvas.width,canvas.height);
+			render_stars();
+		}
+		
+		function render_stars()
+		{
+			context.fillStyle = "#ffffff";			
+		}
+		
+		$(document).ready(function()
+		{
+			canvas = $("#gamearea")[0];
+			canvas.width = $(document).width();
+			canvas.height = $(document).height();
+			context = canvas.getContext("2d");
+			
+			setup();
+			
+			/* Here's out fallback animation loop */
+			function animationLoopFallback()
+			{
+				render();
+				update();
+				window.setTimeout(animationLoopFallback, 1000 / 60);
+			}
+
+			/* Let's use RequestAnimFrame if we can. If not, we'll make do with setTimeout */
+			window.requestAnimFrame = (function(){
+				return  window.requestAnimationFrame       || 
+						window.webkitRequestAnimationFrame || 
+						window.mozRequestAnimationFrame    || 
+						window.oRequestAnimationFrame      || 
+						window.msRequestAnimationFrame     || 
+						function( callback )
+						{
+							window.setTimeout(animationLoopFallback, 1000 / 60);
+						};
+			})();
+
+			(function animationLoop()
+			{
+				requestAnimFrame(animationLoop);
+				render();
+				update();			
+			})();
+			
+			/* Figure out if the browser supports visbility events (we'll be using these to pause while the frame isn't visible */
+			var hidden_event_support_info = (function()
+			{
+				if (typeof document.hidden !== "undefined")
+				{ 
+					return { visibility_property: "hidden", visibility_change: "visibilitychange" };
+				}
+				else if (typeof document.mozHidden !== "undefined")
+				{
+					return { visibility_property: "mozHidden", visibility_change: "mozvisibilitychange" };
+				}
+				else if (typeof document.msHidden !== "undefined")
+				{
+					return { visibility_property: "msHidden", visibility_change: "msvisibilitychange" };
+				} 
+				else if (typeof document.webkitHidden !== "undefined")
+				{
+					return { visibility_property: "webkitHidden", visibility_change: "webkitvisibilitychange" };
+				}
+				else
+				{
+					return {};
+				}
+			})();
+
+
+			/* If browser supports visibility events, let's use them */
+			if (typeof hidden_event_support_info.visibility_property !== "undefined" && typeof hidden_event_support_info.visibility_change !== "undefined")
+			{
+				console.log("supported");
+				
+				$(document).bind(hidden_event_support_info.visibility_change, function()
+				{
+					if (document[hidden_event_support_info.visibility_property])
+					{
+						/* hidden */
+						last_time = 0;
+						now_time = 0;
+					}
+					else
+					{
+						/* unhidden */
+					}
+				});
+			}
+			
+		});
+		
+	</script>
+</head>
+<body>
+	<div id="gameboyframe" style="z-index: 2; position: absolute;"></div>
+	<canvas id="gamearea" style="z-index: 1; left: 0px; top: 0px; position: absolute; background-color: #898989;"></canvas>
+	
+</body>
+</html>
